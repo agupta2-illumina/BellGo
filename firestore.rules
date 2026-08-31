@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection - users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // User's children subcollection
+      match /children/{childId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Notifications collection - users can only read their own
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+                     request.auth.uid == resource.data.userId;
+      allow write: if false; // Only cloud functions can write
+    }
+    
+    // Schools collection - publicly readable for search
+    match /schools/{schoolId} {
+      allow read: if true;
+      allow write: if false; // Admin only
+    }
+  }
+}

@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/environment.dart';
 import '../../data/repositories/mock_child_repository.dart';
 import '../../data/repositories/mock_location_repository.dart';
 import '../../data/repositories/mock_school_repository.dart';
+import '../../data/services/firebase_phone_verification_service.dart';
+import '../../data/services/firebase_sms_notification_service.dart';
 import '../../data/services/mock_notification_service.dart';
 import '../../data/services/mock_phone_verification_service.dart';
 import '../../data/services/mock_school_schedule_service.dart';
@@ -42,13 +45,25 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   return MockNotificationService();
 });
 
+/// Phone Verification Service
+/// Switches between Mock (development) and Firebase (production)
 final phoneVerificationServiceProvider =
     Provider<PhoneVerificationService>((ref) {
-  return MockPhoneVerificationService();
+  if (AppEnvironment.USE_FIREBASE) {
+    return FirebasePhoneVerificationService();
+  } else {
+    return MockPhoneVerificationService();
+  }
 });
 
+/// SMS Notification Service
+/// Switches between Mock (development) and Firebase (production)
 final smsNotificationServiceProvider = Provider<SmsNotificationService>((ref) {
-  return MockSmsNotificationService();
+  if (AppEnvironment.USE_FIREBASE) {
+    return FirebaseSmsNotificationService();
+  } else {
+    return MockSmsNotificationService();
+  }
 });
 
 final leaveTimeCalculatorProvider = Provider<LeaveTimeCalculator>((ref) {
