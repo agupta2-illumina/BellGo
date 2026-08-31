@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/providers.dart';
 import '../../core/constants/app_constants.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -14,6 +15,23 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   int _selectedPickupBuffer = 5;
   int _selectedReminderTime = 5;
+  String? _verifiedPhoneNumber;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPhoneNumber();
+  }
+
+  Future<void> _loadPhoneNumber() async {
+    final phoneService = ref.read(phoneVerificationServiceProvider);
+    final phone = await phoneService.getVerifiedPhoneNumber();
+    if (mounted) {
+      setState(() {
+        _verifiedPhoneNumber = phone;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +67,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             context,
             'Notifications',
             [
+              ListTile(
+                leading: const Icon(Icons.phone_android),
+                title: const Text('Phone Number'),
+                subtitle: _verifiedPhoneNumber != null
+                    ? Text(_formatPhoneNumber(_verifiedPhoneNumber!))
+                    : const Text('Add phone for SMS notifications'),
+                trailing: _verifiedPhoneNumber != null
+                    ? IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => _removePhoneNumber(),
+                      )
+                    : const Icon(Icons.chevron_right),
+                onTap: _verifiedPhoneNumber == null
+                    ? () => context.push('/phone/enroll').then((_) => _loadPhoneNumber())
+                    : null,
+              ),
               ListTile(
                 leading: const Icon(Icons.notifications),
                 title: const Text('Enable Notifications'),
@@ -229,5 +263,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _removePhoneNumber() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Phone Number'),
+        content: const Text(
+          'Are you sure you want to remove your phone number? You will no longer receive SMS notifications.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final phoneService = ref.read(phoneVerificationServiceProvider);
+      await phoneService.removePhoneNumber();
+      setState(() {
+        _verifiedPhoneNumber = null;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Phone number removed')),
+        );
+      }
+    }
+  }
+
+  String _formatPhoneNumber(String phone) {
+    if (phone.startsWith('+1') && phone.length == 12) {
+      final digits = phone.substring(2);
+      return '(${ digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';
+    }
+    return phone;
   }
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../features/calendar/calendar_screen.dart';
 import '../features/children/add_child_screen.dart';
 import '../features/children/children_screen.dart';
+import '../features/phone/phone_enrollment_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/today/today_screen.dart';
 import 'main_scaffold.dart';
@@ -50,6 +51,11 @@ final router = GoRouter(
       path: '/children/add',
       name: 'add-child',
       builder: (context, state) => const AddChildScreen(),
+    ),
+    GoRoute(
+      path: '/phone/enroll',
+      name: 'phone-enroll',
+      builder: (context, state) => const PhoneEnrollmentScreen(),
     ),
   ],
 );
